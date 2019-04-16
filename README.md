@@ -15,12 +15,6 @@ Please see below for Build, Operate, Maintain specifics on the different web app
 ## Requirements
 While the OS version isn't a hard requirement, all testing and development work has been done with `CentOS 7.6.1810 (Core)`.
 
-| Component | Number |
-| - | - |
-| Cores | 4 |
-| RAM | 8 GB |
-| Hard Disk | 20 GB |
-
 ## Secure by Design
 
 ### Secure Deployment
