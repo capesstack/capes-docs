@@ -1,108 +1,35 @@
 # Mumble Build, Operate, Maintain
+Mumble is a voice over IP (VoIP) application primarily designed for use by gamers and is similar to programs such as TeamSpeak.
+
+Mumble uses a client–server architecture which allows users to talk to each other via the same server. It has a very simple administrative interface and features high sound quality and low latency. All communication is encrypted to ensure user privacy.
+
+Mumble is free and open-source software, is cross-platform, and is released under the terms of the new BSD license.
 
 ## Build
-After either running the [CAPES deployment script](../deploy_capes.sh) or the [independent Mumble deployment script](deploy_mumble.sh), you'll need to configure some environment variables to complete the installation and prepare for usage.
 
-Everything in the Build phase is done with either the deploy_capes.sh or deploy_mumble.sh script, the below steps are only if you are doing this completely manually.
+### Installation
+Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually:
 
-### Prepare the Environment
+Deploying with CAPES (recommended):
 ```
-sudo yum -y install bzip2 && yum -y update
-sudo groupadd -r murmur
-sudo useradd -r -g murmur -m -d /var/lib/murmur -s /sbin/nologin murmur
-sudo mkdir -p /var/log/murmur
-sudo chown murmur:murmur /var/log/murmur
-sudo chmod 0770 /var/log/murmur
+sudo yum install -y git
+git clone https://github.com/capesstack/capes-docker.git
+cd capes-docker
+sudo sh deploy_capes.sh
 ```
+Browse to `http://[CAPES-system]` and click the "CyberChef" from the "Services" dropdown.
 
-### Download Binaries
+Deploying manually:
 ```
-curl -OL https://github.com/mumble-voip/mumble/releases/download/1.2.19/murmur-static_x86-1.2.19.tar.bz2
-tar vxjf murmur-static_x86-1.2.19.tar.bz2
-sudo mkdir -p /opt/murmur
-sudo cp -r ./murmur-static_x86-1.2.19/* /opt/murmur
-sudo cp ./murmur-static_x86-1.2.19/murmur.ini /etc/murmur.ini
-```
-#### Note
-Check the version you're downloading to make sure it's `1.2.19`. If it isn't, you'll need to make sure you adjust the file names in the instructions above.
-
-### Configure /etc/murmur.ini
-Make sure that the following settings are properly configured in
-```
-sudo vi /etc/murmur.ini
-database=/var/lib/murmur/murmur.sqlite
-registerName=CAPES - Mumble Server
-logfile=/var/log/murmur/murmur.log
-pidfile=/var/run/murmur/murmur.pid
-port=7000
-```
-
-### Configure the Firewall
-```
-sudo firewall-cmd --add-port=7000/tcp --add-port=7000/udp --permanent
-sudo firewall-cmd --reload
-```
-
-### Rotate Logs
-To avoid `/var/log` filling up, let's set up a log rotation
-```
-sudo vi /etc/logrotate.d/murmur
-/var/log/murmur/*log {
-    su murmur murmur
-    dateext
-    rotate 4
-    missingok
-    notifempty
-    sharedscripts
-    delaycompress
-    postrotate
-        /bin/systemctl reload murmur.service > /dev/null 2>/dev/null || true
-    endscript
-}
-```
-
-### Creating the systemd Service
-We want this to run in the background and at boot, so...
-```
-sudo vi /etc/systemd/system/murmur.service
-[Unit]
-Description=Mumble Server (Murmur)
-Requires=network-online.target
-After=network-online.target mariadb.service time-sync.target
-
-[Service]
-User=murmur
-Type=forking
-ExecStart=/opt/murmur/murmur.x86 -ini /etc/murmur.ini
-PIDFile=/var/run/murmur/murmur.pid
-ExecReload=/bin/kill -s HUP $MAINPID
-
-[Install]
-WantedBy=multi-user.target
-```
-### Generate the `/var/run` pid Directory
-```
-sudo vi /etc/tmpfiles.d/murmur.conf
-d /var/run/murmur 775 murmur murmur
-```
-
-### Prepare the Execution Environment
-```
-sudo systemd-tmpfiles --create /etc/tmpfiles.d/murmur.conf
-sudo systemctl daemon-reload
-sudo systemctl enable murmur.service
-```
-
-## Operate
-### Run the Service
-Let's fire this puppy up!
-```
-sudo systemctl start murmur.service
-```
-
-### Configure the SuperUser Account
-```
-sudo /opt/murmur/murmur.x86 -ini /etc/murmur.ini -supw <passphrase>
+mumble_passphrase=$(date +%s | sha256sum | base64 | head -c 32)
+USER_HOME=$(getent passwd 1000 | cut -d':' -f6)
+for i in mumble_passphrase; do echo "$i = ${!i}"; done > $USER_HOME/capes_credentials.txt
+sudo yum install -y docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo docker run -d --restart unless-stopped --name capes-mumble -p 64738:64738 -p 64738:64738/udp -v /var/lib/docker/volumes/mumble-data/_data:/data:z -e SUPW=$mumble_passphrase extra/mumble:latest
 ```
 
 ### Connect to the Mumble Server
@@ -123,7 +50,7 @@ sudo /opt/murmur/murmur.x86 -ini /etc/murmur.ini -supw <passphrase>
 Once a user has created an account and Registered, you can add them to the `admin` role.
 
 1. Click on the Globe and select the channel that you created and click "Edit"
-1. For the username, use the `SuperUser` account with the passphrase you set during installation (the passphrase box will show up once you type `SuperUser`).
+1. For the username, use the `SuperUser` account with the passphrase in `~/capes_credentials.txt` (the passphrase box will show up once you type `SuperUser`).
 1. Right-click on main channel (likely "CAPES - Mumble Server") and select `Edit`
 1. Go to the Groups tab
 1. Select the `admin` role from the drop down
@@ -139,6 +66,21 @@ Once a user has created an account and Registered, you can add them to the `admi
 #### Note
 If the `Temporary` box is checked and greyed out, you do not have not been delegated rights. See [Delegating Permissions](#delegating-permissions) above.
 
-## Additional documentation  
-https://wiki.mumble.info/wiki/
-https://wiki.mumble.info/wiki/Murmurguide
+## Troubleshooting
+In the event that you have any issues, here are some things you can check to make sure they're operating as intended.
+
+Is Docker running?
+```
+sudo systemctl status docker.service
+```
+Check to make sure it's active, if it isn't, try starting it with `sudo systemctl start docker.service`
+
+Is the Cyberchef container running
+```
+sudo docker ps -a
+```
+Check to make sure that it isn't exited. Try `sudo docker start capes-mumble` or `sudo docker logs capes-mumble` to get a closer look.
+
+Check with the Mumle project maintainers at https://wiki.mumble.info/wiki/ and https://wiki.mumble.info/wiki/Murmurguide
+
+If you're still unable to access Mumble, [please file an issue](https://github.com/capesstack/capes-docker/issues).

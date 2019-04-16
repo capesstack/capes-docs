@@ -7,21 +7,7 @@ _It’s the Cyber Swiss Army Knife._
 
 There should probably be more here but...those GCHQ guys got their stuff together.
 
-Of particular note, all images in the `.htm` file are base64 encoded, so there is no need for any Internet access for a good UX.
-
 ## Build
-
-### Dependencies
-Below are the dependencies for CyberChef. These are installed using `deploy_capes.sh` script.
-
-| Package      | Version           |
-|--------------|-------------------|
-| epel-release | 7-10              |
-| git          | 1.8.3.1-12.el7_4  |
-| nginx        | 1:1.10.2-1.el7    |
-
-### Server Build
-Please see the [server build instructions](../docs/README.md#build-your-os).
 
 ### Installation
 Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually:
@@ -29,23 +15,22 @@ Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually:
 Deploying with CAPES (recommended):
 ```
 sudo yum install -y git
-git clone https://github.com/capesstack/capes.git
-cd capes
+git clone https://github.com/capesstack/capes-docker.git
+cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://<CAPES-system>` and click the "CyberChef" from the "Services" dropdown.
+Browse to `http://[CAPES-system]` and click the "CyberChef" from the "Services" dropdown.
 
 Deploying manually:
 ```
-sudo yum install epel-release -y && sudo yum update -y
-sudo yum install nginx -y
-sudo systemctl enable nginx
-sudo curl https://gchq.github.io/CyberChef/cyberchef.htm -o /usr/share/nginx/html/cyberchef.htm
-sudo firewall-cmd --add-port=80/tcp --permanent
-sudo firewall-cmd --reload
-sudo systemctl start nginx
+sudo yum install -y docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo docker run -d --restart unless-stopped --name capes-cyberchef -p 8000:8080 remnux/cyberchef:latest
 ```
-Browse to `http://<CAPES-system>/cyberchef.htm`
+Browse to `http://[CAPES-system]:8000`
 
 ## Operate
 Drag the Operation to the Recipe, enter your input, and click "Bake!".
@@ -55,27 +40,40 @@ There are lots to experiment with.
 ## Maintain
 
 ### Package Locations
-CyberChef location - `/usr/share/nginx/html/cyberchef.htm`   
+CyberChef location - https://hub.docker.com/r/remnux/cyberchef
 
 ### Update CyberChef
-Easy, you can just download the newest `cyberchef.htm` file and put it in the proper directory:
+When it's time to update CyberChef, you can just grab the newest image and rerun the container build.
 ```
-sudo curl https://gchq.github.io/CyberChef/cyberchef.htm -o /usr/share/nginx/html/cyberchef.htm
+sudo docker pull remnux/cyberchef:latest
+sudo docker stop capes-cyberchef
+sudo docker rm capes-cyberchef
+sudo docker run -d --network capes --restart unless-stopped --name capes-cyberchef -p 8000:8080 remnux/cyberchef:latest
 ```
 
 ## Troubleshooting
 In the event that you have any issues, here are some things you can check to make sure they're operating as intended.
 
-Check to make sure `cyberchef.htm` is in the proper directory:
+Is Docker running?
 ```
-ls /usr/share/nginx/html/cyberchef.htm
+sudo systemctl status docker.service
 ```
-If you receive `ls: cannot access /usr/share/nginx/html/cyberchef.htm: No such file or directory`, re-collect it:
+Check to make sure it's active, if it isn't, try starting it with `sudo systemctl start docker.service`
+
+Is the Cyberchef container running
 ```
-sudo curl https://gchq.github.io/CyberChef/cyberchef.htm -o /usr/share/nginx/html/cyberchef.htm
+sudo docker ps -a
 ```
-You may be having an issue with nginx or your firewall. Check the troubleshooting steps [here](../landing_page/build_operate_maintain.md#troubleshooting)
+Check to make sure that it isn't exited. Try `sudo docker start capes-cyberchef` or `sudo docker logs capes-cyberchef` to get a closer look.
+
+Is the site accessible locally?
+```
+curl [capes_IP]:8000
+or, check from inside the container with
+sudo docker exec -it capes-cyberchef bash
+curl localhost:8080
+```
 
 Check with the CyberChef project maintainers at https://github.com/gchq/CyberChef
 
-If you're still unable to access the CAPES page from a web browser, [please file an issue](https://github.com/capesstack/capes/issues).
+If you're still unable to access the CyberChef page from a web browser, [please file an issue](https://github.com/capesstack/capes-docker/issues).

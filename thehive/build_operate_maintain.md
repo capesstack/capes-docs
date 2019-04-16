@@ -1,61 +1,76 @@
 # TheHive Build, Operate, Maintain
+A scalable, open source and free Security Incident Response Platform, tightly integrated with MISP (Malware Information Sharing Platform), designed to make life easier for SOCs, CSIRTs, CERTs and any information security practitioner dealing with security incidents that need to be investigated and acted upon swiftly.
 
 ## Build
-After either running the [CAPES deployment script](../deploy_capes.sh) or the [independent TheHive deployment script](deploy_thehive.sh), you'll need to configure some environment variables to complete the installation and prepare for usage.
 
-## Case Templates
-If you're interested in pre-built case templates, we've added a few:
+### Installation
+Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually:
 
-* Account Enumeration
-* Attack Public-Facing Application
-* Drive-by Compromise
-* Malware Infection
-* Network Enumeration
-* Phishing
-* Unknown Account
-* Unknown Scheduled Task
-* Unknown Service
-
-Along with the case templates, we've also included 9 custom fields. Some of these custom fields connect to the [RockNSM](http://rocknsm.io) project, so they may not all be applicable.
-
-If you want to upload the case templates, they are included in the TheHive [templates directory](templates). They can be uploaded 1 at a time from the Case Templates menu.
-
-### Caveat
-The case templates **do not** include the custom fields. If you want the custom fields and all the templates at once, you'll need to upload the entire CAPES configuration (recommended).
-
-## Upload Configuration
-To get the custom fields with the templates, you'll need to upload the whole configuration file (which is recommended). After this configuration file is uploaded you can make any additional changes that you'd like. The below steps should be performed on your system, not CAPES:
-
-1. Ensure you have [Python3](https://www.python.org/) installed
-1. Log into TheHive as an administrator
-1. Click on the `Admin` dropdown and select `Users`
-1. Either create a new account with `admin` permissions or use an existing account, create and reveal the API key, copy this down
-1. Collect the [TheHive configuration manager](https://github.com/TheHive-Project/TheHive-Resources/tree/master/contrib/ManageConfig)
-1. Collect the [capes-config.conf](capes-config.conf) file
+Deploying with CAPES (recommended):
 ```
-$ git clone https://github.com/TheHive-Project/TheHive-Resources.git
-$ cd TheHive-Resources/contrib/ManageConfig
-$ python3 submit_config.py -k <API key> -u http://thehive-url:9000 -c capes-config.conf
+sudo yum install -y git
+git clone https://github.com/capesstack/capes-docker.git
+cd capes-docker
+sudo sh deploy_capes.sh
 ```
-1. You'll want to refresh your browser and all of the Case Templates and Custom Fields should be in there and ready for use.
+Browse to `http://[CAPES-system]` and click the "TheHive" from the "Services" drop down.
+
+Deploying manually:
+```
+sudo yum install -y docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo docker network create capes
+sudo mkdir -p /var/lib/docker/volumes/elasticsearch/thehive/_data
+sudo chown -R 1000:1000 /var/lib/docker/volumes/elasticsearch
+sudo docker run -d --network capes --restart unless-stopped --name capes-thehive-elasticsearch -v /var/lib/docker/volumes/elasticsearch/thehive/_data:/usr/share/elasticsearch/data:z -e "http.host=0.0.0.0" -e "transport.host=0.0.0.0" -e "xpack.security.enabled=false" -e "cluster.name=hive" -e "script.inline=true" -e "thread_pool.index.queue_size=100000" -e "thread_pool.search.queue_size=100000" -e "thread_pool.bulk.queue_size=100000" docker.elastic.co/elasticsearch/elasticsearch:5.6.13
+sudo docker run -d --network capes --restart unless-stopped --name capes-thehive -e CORTEX_URL=capes-cortex -p 9000:9000 thehiveproject/thehive:latest --es-hostname capes-thehive-elasticsearch --cortex-hostname capes-cortex
+```
+Browse to `http://[CAPES-system]:9000`
+
+## Operate
+1. Browse to TheHive's UI
+1. Click "Update Database" and create an administrative account
+
+## Maintain
+
+### Package Locations
+TheHive location - https://blog.thehive-project.org/tag/docker/
+
+### Update TheHive
+When it's time to update CyberChef, you can just grab the newest image and rerun the container build.
+```
+sudo docker pull thehiveproject/thehive:latest
+sudo docker stop capes-thehive
+sudo docker rm capes-thehive
+sudo docker run -d --network capes --restart unless-stopped --name capes-thehive -e CORTEX_URL=capes-cortex -p 9000:9000 thehiveproject/thehive:latest --es-hostname capes-thehive-elasticsearch --cortex-hostname capes-cortex
+```
 
 ## Troubleshooting
-You should use the `capes_processes status` command to identify if any CAPES services aren't running as expected.
+In the event that you have any issues, here are some things you can check to make sure they're operating as intended.
 
-### Failed Service
-If TheHive has failed, check your local host file to ensure that there is a static entry for CAPES or it is resolvable via DNS. Example:
+Is Docker running?
 ```
-cat /etc/hosts
-192.168.100.100 capes_hostname
+sudo systemctl status docker.service
 ```
-If the CAPES management IP and hostnames aren't present or correct (and they should be from the build script), update that using the above format and restart the service
-```
-sudo systemctl restart thehive.service
-```
-Give it a couple of seconds and then rerun `capes_processes status` or `sudo systemctl status thehive.service`.  
-![DNS Haiku](http://i.imgur.com/eAwdKEC.png)
+Check to make sure it's active, if it isn't, try starting it with `sudo systemctl start docker.service`
 
-### Web Application Available, No Database
-If you can get to the web interface, but are getting errors that the database isn't online, check to ensure that Elasticsearch is running. If you ran the `capes_processes status` command, you'll know.
+Is the TheHive container running
+```
+sudo docker ps -a
+```
+Check to make sure that it isn't exited. Try `sudo docker start capes-thehive` or `sudo docker logs capes-thehive` to get a closer look.
 
-You can try to restart Elasticsearch with `sudo systemctl restart elasticsearch.service` and monitor it with `capes_processes status`.
+Is the site accessible locally?
+```
+curl [capes_IP]:9000
+or, check from inside the container with
+sudo docker exec -it capes-thehive bash
+curl localhost:9000
+```
+
+Check with the CyberChef project maintainers at https://github.com/TheHive-Project
+
+If you're still unable to access the CyberChef page from a web browser, [please file an issue](https://github.com/capesstack/capes-docker/issues).

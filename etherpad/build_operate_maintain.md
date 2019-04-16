@@ -7,41 +7,38 @@ _All instances provide access to all data through a well-documented API and supp
 
 ## Build
 
-### Dependencies
-Below are the dependencies for Etherpad. These are installed using `deploy_capes.sh` script.
-
-| Package      | Version           |
-|--------------|-------------------|
-| git          | 1.8.3.1-12.el7_4  |
-| expect       | 5.45-14.el7_1     |
-| openssl-devel| 1:1.0.2k-8.el7    |
-| epel-release | 7-10              |
-| mariadb-server | 1:5.5.56-2.el7 |
-| nodejs       | 1:6.11.1-1.el7 |
-
-### Server Build
-Please see the [server build instructions](../docs/README.md#build-your-os).
-
 ### Installation
-Run the [CAPES deployment script](../deploy_capes.sh) or or the [independent Etherpad deployment script](deploy_etherpad.sh).
+Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually.
 
 Deploying with CAPES (recommended):
 ```
 sudo yum install -y git
-git clone https://github.com/capesstack/capes.git
-cd capes
+git clone https://github.com/capesstack/capes-docker.git
+cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://<CAPES-system>` and click the "Etherpad" from the "Services" dropdown.
+Browse to `http://[CAPES-system]` and click the "Etherpad" from the "Services" dropdown.
 
 Deploying manually:
 ```
-sudo yum install -y git
-git clone https://github.com/capesstack/capes.git
-cd capes
-sudo sh deploy_etherpad.sh
+etherpad_user_passphrase=$(date +%s | sha256sum | base64 | head -c 32)
+sleep 1
+etherpad_mysql_passphrase=$(date +%s | sha256sum | base64 | head -c 32)
+sleep 1
+etherpad_admin_passphrase=$(date +%s | sha256sum | base64 | head -c 32)
+sleep 1
+USER_HOME=$(getent passwd 1000 | cut -d':' -f6)
+for i in {etherpad_user_passphrase,etherpad_mysql_passphrase,etherpad_admin_passphrase}; do echo "$i = ${!i}"; done > $USER_HOME/capes_credentials.txt
+sudo yum install -y docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo docker network create capes
+sudo docker run -d  --network capes --restart unless-stopped --name capes-etherpad-mysql -v /var/lib/docker/volumes/mysql/etherpad/_data:/var/lib/mysql:z -e "MYSQL_DATABASE=etherpad" -e "MYSQL_USER=etherpad" -e MYSQL_PASSWORD=$etherpad_mysql_passphrase -e "MYSQL_RANDOM_ROOT_PASSWORD=yes" mysql:5.7
+sudo docker run -d --network capes --restart unless-stopped --name capes-etherpad -e "ETHERPAD_TITLE=CAPES" -e "ETHERPAD_PORT=9001" -e ETHERPAD_ADMIN_PASSWORD=$etherpad_admin_passphrase -e "ETHERPAD_ADMIN_USER=admin" -e "ETHERPAD_DB_TYPE=mysql" -e "ETHERPAD_DB_HOST=capes-etherpad-mysql" -e "ETHERPAD_DB_USER=etherpad" -e ETHERPAD_DB_PASSWORD=$etherpad_mysql_passphrase -e "ETHERPAD_DB_NAME=etherpad" -p 5000:9001 tvelocity/etherpad-lite:latest
 ```
-Browse to `http://<CAPES-system>:5000`
+Browse to `http://[CAPES-system]:5000`
 
 ## Operate
 Once you have completed the installation, you can start by creating simple pad's by visiting the page.
@@ -51,30 +48,54 @@ Additional functionality and extensibility of Etherpad is controlled with nodejs
 ### Administrative Functionality
 Once you have installed Etherpad, you will want to browse to the administrative path and add some plugins for management.
 
-#### ep_adminpads
+#### adminpads
 A plugin for Etherpad allowing you to list, search, and delete pads.
 
-It should be noted that you should be able to install `ep_adminpads` with `npm`, however, I cannot get it to show up after installation (`sudo npm install -g ep_adminpads`). If anyone knows how to do that and can do a PR, I can just build `ep_adminpads` into the install script.
-
-To install ep_adminpads:
-1. Browse to `http://<CAPES-system>:5000/admin`
-1. Authenticate with `admin` and the credentials you created during the installation of Etherpad
+To install adminpads:
+1. Browse to `http://[CAPES-system]:5000/admin`
+1. Authenticate with `admin` and the credentials from the `~capes_credentials.txt` file
 1. Select `Plugin Manager`
 1. Search for `adminpads`
 1. Click `Install`
-1. Wait for it to install, refresh your browser, and you will notice a `Manage pads` tab, or browse to `http://<CAPES-system>:5000/admin/pads`
+1. Wait for it to install, refresh your browser, and you will notice a `Manage pads` tab, or browse to `http://[CAPES-system]:5000/admin/pads`
 
 ## Maintain
 
 ### Package Locations
-Etherpad location - `/opt/etherpad`   
-Etherpad configuration location - `/opt/etherpad/settings.json`
+Etherpad location - https://hub.docker.com/r/tvelocity/etherpad-lite/
+
+### Update Etherpad
+When it's time to update Etherpad, you can just grab the newest image and rerun the container build.
+```
+sudo docker pull tvelocity/etherpad-lite:latest
+sudo docker stop capes-etherpad
+sudo docker rm capes-etherpad
+sudo docker run -d --network capes --restart unless-stopped --name capes-etherpad -e "ETHERPAD_TITLE=CAPES" -e "ETHERPAD_PORT=9001" -e ETHERPAD_ADMIN_PASSWORD=[from ~/capes_credentials.txt] -e "ETHERPAD_ADMIN_USER=admin" -e "ETHERPAD_DB_TYPE=mysql" -e "ETHERPAD_DB_HOST=capes-etherpad-mysql" -e "ETHERPAD_DB_USER=etherpad" -e ETHERPAD_DB_PASSWORD=[from ~/capes_credentials.txt] -e "ETHERPAD_DB_NAME=etherpad" -p 5000:9001 tvelocity/etherpad-lite:latest
+```
 
 ## Troubleshooting
 In the event that you have any issues, here are some things you can check to make sure they're operating as intended.
 
-You may be having an issue with your firewall. Check the troubleshooting steps [here](../landing_page/build_operate_maintain.md#troubleshooting)
+Is Docker running?
+```
+sudo systemctl status docker.service
+```
+Check to make sure it's active, if it isn't, try starting it with `sudo systemctl start docker.service`
+
+Are the Etherpad and Etherpad MySQL containers running
+```
+sudo docker ps -a
+```
+Check to make sure that it isn't exited. Try `sudo docker start capes-etherpad` or `sudo docker logs capes-etherpad` to get a closer look. A lot of the issues with Etherpad usually have to do with the MySQL database not being up or failed logons. Check all of the creds, even if you have to manually enter them.
+
+Is the site accessible locally?
+```
+curl [capes_IP]:5000
+or, check from inside the container with
+sudo docker exec -it capes-gitea bash
+curl localhost:9001
+```
 
 Check with the Etherpad project maintainers at http://etherpad.org/
 
-If you're still unable to access the Etherpad page from a web browser, [please file an issue](https://github.com/capesstack/capes/issues).
+If you're still unable to access the Etherpad page from a web browser, [please file an issue](https://github.com/capesstack/capes-docker/issues).

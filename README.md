@@ -9,10 +9,10 @@ Please see below for Build, Operate, Maintain specifics on the different web app
 * [TheHive](thehive/build_operate_maintain.md)  
 * [Cortex](thehive/build_operate_maintain.md)  
 * [Mumble](mumble/build_operate_maintain.md)  
+* [Kibana](kibana/build_operate_maintain.md)  
+* [Portainer](portainer/build_operate_maintain.md)  
 
 ## Requirements
-There has not been extensive testing, but all of these services have run without issue on a single virtual machine with approximately 20 users and no issue for a week. That said, your mileage may vary.
-
 While the OS version isn't a hard requirement, all testing and development work has been done with `CentOS 7.6.1810 (Core)`.
 
 | Component | Number |
@@ -38,15 +38,12 @@ While there are a lot of projects that are developed using Ubuntu (many of these
     - AppArmor uses prescripted rules to define security controls (for example, I know that a text editor shouldn't talk to the Internet because someone **told** me it shouldn't)
 
 ### Implementation
-While the `firewalld` service is running on CAPES and the only ports listening have services attached to them, you should still consider using a Web Application Firewall (WAF), an Intrusion Detection System (IDS) or a Network Security Monitor (like [ROCKNSM](rocknsm.io) - which has an IDS integrated on top of a litany of other goodies) to ensure that your CAPES stack isn't being targeted.
+While the `firewalld` service is running on CAPES and the only ports listening have services attached to them, you should still consider using a Web Application Firewall (WAF), an Intrusion Detection System (IDS), or a Network Security Monitor (like [RockNSM](rocknsm.io) - which has an IDS integrated on top of a litany of other goodies) to ensure that your CAPES stack isn't being targeted.
 
 If possible, CAPES, just like a passive NSM, should **not** be on the contested network. This will prevent it from being targeted by aggressors.
 
-### SSL
-It is a poor practice to deploy self-signed SSL certificates because it teaches bad behavior by "clicking through" SSL warnings; for that reason, we have decided not to deploy CAPES with SSL. [If you want to enable SSL for your own deployment](https://medium.com/@pentacent/nginx-and-lets-encrypt-with-docker-in-less-than-5-minutes-b4b8a60d3a71), we encourage you to do so.
-
 ## Installation
-Generally, the CAPES ecosystem is meant to run as a whole, so the preferred usage will be to install CAPES with the `deploy_capes.sh` script in the root directory of this repository. Additionally, if there is a service that you do not want, you can comment that service out of the docker-compose file as they are documented with service tags.
+Generally, the CAPES ecosystem is meant to run as a whole, so the preferred usage will be to install CAPES with the `deploy_capes.sh` script in the root directory of this repository. Additionally, if there is a service that you do not want, you can comment that service out of the `deploy_capes.sh` file as they are documented with service tags.
 
 ### Build your OS (CentOS 7.6)
 This is meant to help those who need a step-by-step build of CentOS, securing SSh, and getting ready to grab CAPES. If you don't need this guide, skip on down to [Get CAPES](#get-capes).
@@ -81,7 +78,7 @@ This is meant to help those who need a step-by-step build of CentOS, securing SS
 1. Create a user, but ensure that you toggle the `Make this user administrator` checkbox
 1. Once the installation is done, click the `Reboot` button in the bottom right to...well...reboot
 1. Login using the account you created during the Anaconda setup
-1. Secure ssh by removing username and password as an authentication option and don't allow the root account to log in at all
+1. Secure Ssh by removing username and password as an authentication option and don't allow the root account to log in at all
   - On your management system, create an ssh key pair
     ```
     ssh-keygen -t rsa #accept the defaults, but enter a passphrase for your keys
@@ -105,10 +102,9 @@ sudo sh deploy_capes.sh
 
 ### Build Process
 The build is automated and the shell script will start the build of:
-* Install Mumble
 * Install Docker
-* Install Docker-Compose
 * Install Docker containers for
+- Mumble
 - Rocketchat
 - Gita
 - TheHive
@@ -116,14 +112,19 @@ The build is automated and the shell script will start the build of:
 - Etherpad
 - Cyberchef
 - Nginx
-- Elasticsearch
 - Mysql
 - Mongodb
+- Elasticsearch (for TheHive)
+- Elasticsearch (for monitoring CAPES)
+- Kibana (for monitoring CAPES)
+- Heartbeat (for monitoring CAPES)
 * Setup the CAPES landing page
 * Make firewall changes
 
 ## Post Installation
 While the CAPES deploy script attempts to get you up and running, there are a few things that need to be done after installation.
+
+After the CAPES installation, you should be able to browse to `http://capes_hostname` (or `http://capes_IP` if you don't have DNS set up) to get to the CAPES landing page and start setting up services.
 
 ### Portainer
 1. Browse to the Portainer UI and create your admin account
@@ -142,40 +143,20 @@ While the CAPES deploy script attempts to get you up and running, there are a fe
 1. Login in as the user you just created
 
 ### Etherpad
-1. I recommend going to [capesIP]:5000/admin
+1. Browse to the Etherpad UI
+1. I also recommend going to [capesIP]:5000/admin
 1. Login with the admin account in `~/capes_credentials.txt` as `etherpad_admin_passphrase`
 1. Click on `Plugins` and install `AdminPads`
 
 ### Rocketchat
-1. Browse to [capesIP]:3000
+1. Browse to the Rocketchat UI
 1. Complete the `Admin Info`
 1. Complete the `Organization Info`
 1. Complete the `Server Info`
 1. In the `Register Server` section, select `Keep standalone`
 
-### Cortex
-1. Log into Cortex and create a new Organization
-1. Click on `Users` and create an Organization Administrator, set that user's passphrase
-1. Create a user called `TheHiveIntegration` (or the like) with the `read,analyze` roles, create an API key, copy that down
-1. Click on the Organization tab and enable the Analyzers that you want to enable
-1. Enter your Analyzer specific information (generally an API key)
-
 ### TheHive
-_**Note: Currently, I am unaware of how to connect Cortex to TheHive within the container. The `application.conf` isn't present in the container. I am working with the project owner on this. The below is a placeholder for instructions to connect Cortex to TheHive.**_
-1. From the command-line type `sudo docker exec -it capes-thehive /bin/bash`
-1. Type `vi /etc/thehive/application.conf`
-1. Go to the very bottom of the document and add `key = <your-api-key>` to the `CORTEX-SERVER-ID` section.
-```
-cortex {
-  "CORTEX-SERVER-ID" {
-  url = "http://capes-cortex:9001"
-  key = "<your-API-key>"
-  }
-}
-```
-1. Hit the `esc` key and then type `:wq` and then `exit`.
-1. Type `sudo docker restart capes-thehvie`
-1. Browse to TheHive's UI over port `9000`.
+1. Browse to TheHive's UI
 1. Click "Update Database" and create an administrative account
 
 ### Mumble
@@ -200,8 +181,5 @@ cortex {
 1. Click `Add` and then `Ok`
 1. Click on the Globe and select the channel that you created and click "Edit"
 1. Enter your username (not `SuperUser`) and your passphrase, and you can log in and perform administrative functions
-
-## Get Started
-After the CAPES installation, you should be able to browse to `http://capes_hostname` (or `http://capes_IP` if you don't have DNS set up) to get to the CAPES landing page and start setting up services.
 
 I **strongly** recommend that you look at the `Build, Operate, Maintain` guides for these services before you get going. A few of the services launch a configuration pipeline that is hard to restart if you don't complete it the first time (I'm looking at you TheHive, Cortex, and Gitea).

@@ -7,89 +7,42 @@ _Gitea is a community managed fork of GoGS. The goal of this project is to make 
 
 ## Build
 
-### Dependencies
-Below are the dependencies for Gitea. These are installed using `deploy_capes.sh` script.
-
-| Package      | Version           |
-|--------------|-------------------|
-| mariadb-server          | 5.5.56-MariaDB  |
-| gitea         | 1ed7f18 |
-
-### Server Build
-Please see the [server build instructions](../docs/README.md#build-your-os).
-
 ### Installation
-Run the [CAPES deployment script](../deploy_capes.sh) or or the [independent Gitea deployment script](deploy_gitea.sh).
+Run the [CAPES deployment script](../deploy_capes.sh) or deploy manually:
 
 Deploying with CAPES (recommended):
 ```
 sudo yum install -y git
-git clone https://github.com/capesstack/capes.git
-cd capes
+git clone https://github.com/capesstack/capes-docker.git
+cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://<CAPES-system>` and click on "Gitea" from the "Services" dropdown.
+Browse to `http://[CAPES-system]` and click the "Gitea" from the "Services" dropdown.
 
 Deploying manually:
 ```
-sudo yum install -y git
-git clone https://github.com/capesstack/capes.git
-cd capes/gitea/
-sudo sh deploy_gitea.sh
+gitea_mysql_passphrase=$(date +%s | sha256sum | base64 | head -c 32)
+USER_HOME=$(getent passwd 1000 | cut -d':' -f6)
+for i in gitea_mysql_passphrase; do echo "$i = ${!i}"; done > $USER_HOME/capes_credentials.txt
+sudo yum install -y docker
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+sudo systemctl enable docker.service
+sudo systemctl start docker.service
+sudo docker network create capes
+sudo docker run -d  --network capes --restart unless-stopped --name capes-gitea-mysql -v /var/lib/docker/volumes/mysql/gitea/_data:/var/lib/mysql:z -e "MYSQL_DATABASE=gitea" -e "MYSQL_USER=gitea" -e MYSQL_PASSWORD=$gitea_mysql_passphrase -e "MYSQL_RANDOM_ROOT_PASSWORD=yes" mysql:5.7
+sudo docker run -d --network capes --restart unless-stopped --name capes-gitea -v /var/lib/docker/volumes/gitea/_data:/data:z -e "VIRTUAL_PORT=3000" -e "VIRTUAL_HOST=capes-gitea" -p 2222:22 -p 4000:3000 gitea/gitea:latest
 ```
-Browse to `http://<Cgitea-system>:4000`
+Browse to `http://[CAPES-system]:4000`
 
 #### Post-Install Configuration
 When you browse to Gitea for the first time, you'll enter a post-installation configuration pipeline.
 
-* The database user will be `gitea` and the passphrase will be what you set at the beginning of the install process  
+* The database will be `MYSQL` and the user will be `gitea` and the passphrase is in `~/capes_credentials.txt`
 * Use the explicit IP of the Gitea server instead of `localhost` for the `Domain` and `Application URL` fields  
 * Under `Server and other Services Settings` check the `Disable Avatar Service` box  
 
 ![gitea install](img/install.png)
-
-##### Configure SSH Usage
-
-Gitea provides the ability to perform git functions via http or ssh.  In order to enable `ssh` complete the following steps:  
-
-* edit gitea's app.ini file  
-`sudo vi /opt/gitea/custom/conf/app.ini`  
-
-make the following changes & additions to the `[server]` section:  
-
-`START_SSH_SERVER = true`     # ensure this is set to true  
-`DISABLE_SSH      = false`    # ensure this is set to false  
-`SSH_PORT         = 4001`     # set this to any available port that is **NOT 22**   
-`SSH_LISTEN_PORT  = 4001`     # set this to any available port that is **NOT 22**  
-
-here's an example (showing only the `[server]` section):  
-```
-...
-
-[server]
-LOCAL_ROOT_URL   = http://localhost:4000/
-SSH_DOMAIN       = <ip>
-START_SSH_SERVER = true
-DOMAIN           = <ip>
-HTTP_PORT        = 4000
-ROOT_URL         = http://<ip>:4000/
-DISABLE_SSH      = false
-SSH_PORT         = 4001
-SSH_LISTEN_PORT  = 4001
-LFS_START_SERVER = true
-LFS_CONTENT_PATH = /opt/gitea/data/lfs
-LFS_JWT_SECRET   = xxxxxxxxxxxxxxxxxxx
-OFFLINE_MODE     = false
-
-...:
-```
-##### Wrapping it up
-```
-sudo firewall-cmd --add-port=4001/tcp --permanent
-sudo firewall-cmd --reload
-sudo systemctl restart gitea
-sudo systemctl restart sshd
-```
 
 ## Operate
 Immediately after you complete the post-installation configuration, you'll be presented with a login screen. Click on `Need an account? Sign up now.` This account will be the administrator.
@@ -180,8 +133,26 @@ Tracks the status of the system, such as RAM, disk usage, latency times, uptime,
 ## Troubleshooting
 In the event that you have any issues, here are some things you can check to make sure they're operating as intended.
 
-You may be having an issue with your firewall. Check the troubleshooting steps [here](../landing_page/build_operate_maintain.md#troubleshooting)
+Is Docker running?
+```
+sudo systemctl status docker.service
+```
+Check to make sure it's active, if it isn't, try starting it with `sudo systemctl start docker.service`
 
-Check with the GoGS project maintainers at https://gogs.io or the Gitea project maintainers at https://gitea.io
+Are the Gitea and Gitea MySQL containers running
+```
+sudo docker ps -a
+```
+Check to make sure that it isn't exited. Try `sudo docker start capes-gitea` or `sudo docker logs capes-gitea` to get a closer look. A lot of the issues with Gitea usually have to do with the MySQL database not being up or failed logons. Check all of the creds, even if you have to manually enter them.
+
+Is the site accessible locally?
+```
+curl [capes_IP]:4000
+or, check from inside the container with
+sudo docker exec -it capes-gitea bash
+curl localhost:3000
+```
+
+Check with the GoGS or Girea project maintainers at https://gogs.io or the Gitea project maintainers at https://gitea.io
 
 If you're still unable to access the Gitea page from a web browser, [please file an issue](https://github.com/capesstack/capes/issues).
