@@ -29,9 +29,14 @@ sudo mkdir -p /var/lib/docker/volumes/elasticsearch/capes/_data
 sudo chown -R 1000:1000 /var/lib/docker/volumes/elasticsearch
 sudo chown root: heartbeat.yml
 sudo chmod 0644 heartbeat.yml
-sudo docker run -d --network capes --restart unless-stopped --name capes-elasticsearch -v /var/lib/docker/volumes/elasticsearch/capes/_data:/usr/share/elasticsearch/data:z -p 9200:9200 -p 9300:9300 -e "discovery.type=single-node" -e "cluster.name=capes" docker.elastic.co/elasticsearch/elasticsearch:7.0.0
-sudo docker run -d --network capes --restart unless-stopped --name capes-kibana --network capes -p 5601:5601 --link capes-elasticsearch:elasticsearch docker.elastic.co/kibana/kibana:7.0.0
-sudo docker run -d --network capes --restart unless-stopped --name capes-heartbeat --network capes --user=heartbeat -v $(pwd)/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:z docker.elastic.co/beats/heartbeat:7.0.0 -e -E output.elasticsearch.hosts=["capes-elasticsearch:9200"]
+sudo chown root: metricbeat.yml
+sudo chmod 0644 metricbeat.yml
+sudo docker run -d --network capes --restart unless-stopped --name capes-elasticsearch-1 -v /var/lib/docker/volumes/elasticsearch-1/capes/_data:/usr/share/elasticsearch/data:z --ulimit memlock=-1:-1 -p 9200:9200 -p 9300:9300 -e "cluster.name=capes" -e "node.name=capes-elasticsearch-1" -e "cluster.initial_master_nodes=capes-elasticsearch-1" -e "bootstrap.memory_lock=true" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" docker.elastic.co/elasticsearch/elasticsearch:[version]]
+sudo docker run -d --network capes --restart unless-stopped --name capes-elasticsearch-2 -v /var/lib/docker/volumes/elasticsearch-2/capes/_data:/usr/share/elasticsearch/data:z --ulimit memlock=-1:-1 -e "cluster.name=capes" -e "node.name=capes-elasticsearch-2" -e "cluster.initial_master_nodes=capes-elasticsearch-1" -e "bootstrap.memory_lock=true" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "discovery.seed_hosts=capes-elasticsearch-1,capes-elasticsearch-3" docker.elastic.co/elasticsearch/elasticsearch:[version]
+sudo docker run -d --network capes --restart unless-stopped --name capes-elasticsearch-3 -v /var/lib/docker/volumes/elasticsearch-3/capes/_data:/usr/share/elasticsearch/data:z --ulimit memlock=-1:-1 -e "cluster.name=capes" -e "node.name=capes-elasticsearch-3" -e "cluster.initial_master_nodes=capes-elasticsearch-1" -e "bootstrap.memory_lock=true" -e "ES_JAVA_OPTS=-Xms512m -Xmx512m" -e "discovery.seed_hosts=capes-elasticsearch-1,capes-elasticsearch-2" docker.elastic.co/elasticsearch/elasticsearch:[version]
+sudo docker run -d --network capes --restart unless-stopped --name capes-kibana --network capes -p 5601:5601 --link capes-elasticsearch:elasticsearch docker.elastic.co/kibana/kibana:[version]
+sudo docker run -d --network capes --restart unless-stopped --name capes-heartbeat --network capes --user=heartbeat -v $(pwd)/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:z docker.elastic.co/beats/heartbeat:[version] -e -E output.elasticsearch.hosts=["capes-elasticsearch:9200"]
+sudo docker run -d --network capes --restart unless-stopped --name capes-metricbeat --network capes --user=root -v $(pwd)/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:z -v /var/run/docker.sock:/var/run/docker.sock:z -v /sys/fs/cgroup:/hostfs/sys/fs/cgroup:z -v /proc:/hostfs/proc:z -v /:/hostfs:z docker.elastic.co/beats/metricbeat:[version] -e -E output.elasticsearch.hosts=["capes-elasticsearch-1:9200"]
 ```
 Browse to `http://[CAPES-system]:5601`
 
@@ -42,7 +47,8 @@ Browse to `http://[CAPES-system]:5601`
 1. Click on Create index pattern
 1. Type `heartbeat-`
 1. Select `@timestamp`
-1. You should now be able to select the Uptime app on the left side (1/2 circle with an arrow) to monitor CAPES uptime
+1. Repeat for `metricbeat-`
+1. You should now be able to select the Uptime app on the left side (1/2 circle with an arrow) to monitor CAPES uptime and the Infrastructure app on the left side to monitor the System and Docker resources
 
 ## Maintain
 
