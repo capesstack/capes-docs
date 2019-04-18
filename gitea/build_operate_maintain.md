@@ -38,7 +38,7 @@ Browse to `http://[CAPES-system]:4000`
 #### Post-Install Configuration
 When you browse to Gitea for the first time, you'll enter a post-installation configuration pipeline.
 
-* The database will be `MYSQL` and the user will be `gitea` and the passphrase is in `~/capes_credentials.txt`
+* The database will be `MYSQL`, the host will be `capes-gitea-mysql:3306`, and the user will be `gitea` and the passphrase is in `~/capes_credentials.txt`
 * Use the explicit IP of the Gitea server instead of `localhost` for the `Domain` and `Application URL` fields  
 * Under `Server and other Services Settings` check the `Disable Avatar Service` box  
 

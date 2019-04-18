@@ -126,8 +126,7 @@ After the CAPES installation, you should be able to browse to `http://capes_host
 
 ### Gitea
 1. When you browse to your Gitea instance, you'll need to click on `Register`, set your database passphrase, your SSH Server Domain, your base URL, and disable Gravatar.
-1. Set your database type to `MYSQL`
-1. Set the Gitea passphrase was during installation and is located in `~/capes_credentials.txt` as `gitea_mysql_passphrase`. Enter it in the `Password` field on the Gitea UI. Leave the `Username` and `Database Name`
+1. Set your database type to `MYSQL`, the host will be `capes-gitea-mysql:3306`, and the user will be `gitea` and the passphrase is in `~/capes_credentials.txt`
 1. For the `SSH Server Domain`, use your host IP address (not the container IP)
 1. For the `Gitea Base URL`, enter `http://[your_host_IP_address]:4000/`
 1. Go to `Server and Third-Party Service Settings` and check the `Disable Gravatar` box
