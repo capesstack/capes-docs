@@ -152,6 +152,21 @@ After the CAPES installation, you should be able to browse to `http://capes_host
 1. Browse to TheHive's UI
 1. Click "Update Database" and create an administrative account
 
+#### Upload Configuration
+To get the custom fields with the templates, you'll need to upload the whole configuration file (which is recommended). After this configuration file is uploaded you can make any additional changes that you'd like. The below steps should be performed on your system, not CAPES:
+
+1. Ensure you have [Python3](https://www.python.org/) installed
+1. Log into TheHive as an administrator
+1. Click on the `Admin` dropdown and select `Users`
+1. Either create a new account with `admin` permissions or use an existing account, create and reveal the API key, copy this down
+1. Collect the [capes-config.conf](thehive/capes-config.conf) file
+```
+git clone https://github.com/TheHive-Project/TheHive-Resources.git
+cd TheHive-Resources/contrib/ManageConfig
+sudo pip3 install requests
+python3 submit_config.py -k <API key> -u http://CAPES-IP:9000 -c capes-config.conf
+```
+
 ### Mumble
 1. Download the client of your choosing from the [Mumble client page](https://www.mumble.com/mumble-download.php)
 1. Install
