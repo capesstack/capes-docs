@@ -13,7 +13,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click the "TheHive" from the "Services" drop down.
+Browse to `https://[CAPES-system]` and click the "TheHive" from the "Services" drop down.
 
 Deploying manually:
 ```

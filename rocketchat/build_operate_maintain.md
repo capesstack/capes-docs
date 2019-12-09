@@ -15,7 +15,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click on "Rocketchat" from the "Services" dropdown.
+Browse to `https://[CAPES-system]` and click on "Rocketchat" from the "Services" dropdown.
 
 Deploying manually:
 ```
@@ -30,7 +30,7 @@ sudo docker run -d --network capes --restart unless-stopped --name capes-rocketc
 Browse to `http://[CAPES-system]:3000`
 
 ## Operate
-1. Browse to `http://[CAPES-system]` and click on "Rocketchat" from the "Services" dropdown or `http://[CAPES-system]:3000`
+1. Browse to `https://[CAPES-system]` and click on "Rocketchat" from the "Services" dropdown or `http://[CAPES-system]:3000`
 1. Complete the `Admin Info`
 1. Complete the `Organization Info`
 1. Complete the `Server Info`

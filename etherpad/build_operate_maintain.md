@@ -17,7 +17,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click the "Etherpad" from the "Services" dropdown.
+Browse to `https://[CAPES-system]` and click the "Etherpad" from the "Services" dropdown.
 
 Deploying manually:
 ```
@@ -38,7 +38,7 @@ sudo docker network create capes
 sudo docker run -d  --network capes --restart unless-stopped --name capes-etherpad-mysql -v /var/lib/docker/volumes/mysql/etherpad/_data:/var/lib/mysql:z -e "MYSQL_DATABASE=etherpad" -e "MYSQL_USER=etherpad" -e MYSQL_PASSWORD=$etherpad_mysql_passphrase -e "MYSQL_RANDOM_ROOT_PASSWORD=yes" mysql:5.7
 sudo docker run -d --network capes --restart unless-stopped --name capes-etherpad -e "ETHERPAD_TITLE=CAPES" -e "ETHERPAD_PORT=9001" -e ETHERPAD_ADMIN_PASSWORD=$etherpad_admin_passphrase -e "ETHERPAD_ADMIN_USER=admin" -e "ETHERPAD_DB_TYPE=mysql" -e "ETHERPAD_DB_HOST=capes-etherpad-mysql" -e "ETHERPAD_DB_USER=etherpad" -e ETHERPAD_DB_PASSWORD=$etherpad_mysql_passphrase -e "ETHERPAD_DB_NAME=etherpad" -p 5000:9001 tvelocity/etherpad-lite:latest
 ```
-Browse to `http://[CAPES-system]:5000`
+Browse to `https://[CAPES-system]:5000`
 
 ## Operate
 Once you have completed the installation, you can start by creating simple pad's by visiting the page.
@@ -52,12 +52,12 @@ Once you have installed Etherpad, you will want to browse to the administrative 
 A plugin for Etherpad allowing you to list, search, and delete pads.
 
 To install adminpads:
-1. Browse to `http://[CAPES-system]:5000/admin`
+1. Browse to `https://[CAPES-system]:5000/admin`
 1. Authenticate with `admin` and the credentials from the `~capes_credentials.txt` file
 1. Select `Plugin Manager`
 1. Search for `adminpads`
 1. Click `Install`
-1. Wait for it to install, refresh your browser, and you will notice a `Manage pads` tab, or browse to `http://[CAPES-system]:5000/admin/pads`
+1. Wait for it to install, refresh your browser, and you will notice a `Manage pads` tab, or browse to `https://[CAPES-system]:5000/admin/pads`
 
 ## Maintain
 

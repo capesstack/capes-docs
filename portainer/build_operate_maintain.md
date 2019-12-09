@@ -15,7 +15,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click on "Portainer" from the "Services" drop down.
+Browse to `https://[CAPES-system]` and click on "Portainer" from the "Services" drop down.
 
 Deploying manually:
 ```
@@ -26,7 +26,7 @@ sudo systemctl enable docker.service
 sudo systemctl start docker.service
 sudo docker run -d --restart unless-stopped --name capes-portainer -v /var/lib/docker/volumes/portainer/_data:/data:z -v /var/run/docker.sock:/var/run/docker.sock -p 2000:9000 portainer/portainer:latest
 ```
-Browse to `http://[CAPES-system]:2000`
+Browse to `https://[CAPES-system]:2000`
 
 ## Operate
 1. Browse to the Portainer UI and create your admin account

@@ -19,7 +19,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click the "CyberChef" from the "Services" dropdown.
+Browse to `https://[CAPES-system]` and click the "CyberChef" from the "Services" dropdown.
 
 Deploying manually:
 ```
@@ -30,7 +30,7 @@ sudo systemctl enable docker.service
 sudo systemctl start docker.service
 sudo docker run -d --restart unless-stopped --name capes-cyberchef -p 8000:8080 remnux/cyberchef:latest
 ```
-Browse to `http://[CAPES-system]:8000`
+Browse to `https://[CAPES-system]:8000`
 
 ## Operate
 Drag the Operation to the Recipe, enter your input, and click "Bake!".

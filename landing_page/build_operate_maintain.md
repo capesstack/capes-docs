@@ -19,7 +19,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]`
+Browse to `https://[CAPES-system]`
 
 Deploying manually:
 ```
@@ -30,7 +30,7 @@ sudo systemctl enable docker.service
 sudo systemctl start docker.service
 sudo docker run -d --restart unless-stopped --name capes-landing-page -v $(pwd)/landing_page:/usr/share/nginx/html:z -p 80:80 nginx:latest
 ```
-Browse to `http://[CAPES-system]`
+Browse to `https://[CAPES-system]`
 
 ## Operate
 The landing page runs as the `nginx` user, it has no shell and cannot be logged on as.

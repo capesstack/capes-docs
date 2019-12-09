@@ -15,7 +15,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click the "TheHive" from the "Services" drop down.
+Browse to `https://[CAPES-system]` and click the "TheHive" from the "Services" drop down.
 
 Deploying manually:
 ```
@@ -38,7 +38,7 @@ sudo docker run -d --network capes --restart unless-stopped --name capes-kibana 
 sudo docker run -d --network capes --restart unless-stopped --name capes-heartbeat --network capes --user=heartbeat -v $(pwd)/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:z docker.elastic.co/beats/heartbeat:[version] -e -E output.elasticsearch.hosts=["capes-elasticsearch:9200"]
 sudo docker run -d --network capes --restart unless-stopped --name capes-metricbeat --network capes --user=root -v $(pwd)/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:z -v /var/run/docker.sock:/var/run/docker.sock:z -v /sys/fs/cgroup:/hostfs/sys/fs/cgroup:z -v /proc:/hostfs/proc:z -v /:/hostfs:z docker.elastic.co/beats/metricbeat:[version] -e -E output.elasticsearch.hosts=["capes-elasticsearch-1:9200"]
 ```
-Browse to `http://[CAPES-system]:5601`
+Browse to `https://[CAPES-system]:5601`
 
 ## Operate
 1. Browse to Kibana's UI

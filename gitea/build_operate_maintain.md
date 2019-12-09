@@ -17,7 +17,7 @@ git clone https://github.com/capesstack/capes-docker.git
 cd capes-docker
 sudo sh deploy_capes.sh
 ```
-Browse to `http://[CAPES-system]` and click the "Gitea" from the "Services" dropdown.
+Browse to `https://[CAPES-system]` and click the "Gitea" from the "Services" dropdown.
 
 Deploying manually:
 ```
