@@ -119,7 +119,7 @@ The build is automated and the shell script will start the build of:
 While the CAPES deploy script attempts to get you up and running, there are a few things that need to be done after installation.
 
 ---
-:warning: We are aware of an issue with macOS Catalina and the most current version of Chrome browser that prevents Chrome from allowing self-signed TLS certificates. We are looking for an answer and will update when we find that. This does not affect Safari or Firefox.
+:warning: We are aware of an issue with macOS Catalina and the most current version of Chrome browser that prevents Chrome from allowing self-signed TLS certificates. We are looking for an answer and will update when we find that. This does not affect Safari or Firefox or other operating systems.
 
 As a workaround, you can [manually add and Always Trust](https://support.apple.com/guide/keychain-access/change-the-trust-settings-of-a-certificate-kyca11871/mac) `capes.crt` from `/home/[user]/capes-docker/nginx/ssl/capes.crt` to your macOS keychain via Keychain Access and restart Chrome.
 
