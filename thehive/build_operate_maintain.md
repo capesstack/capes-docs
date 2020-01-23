@@ -31,8 +31,16 @@ sudo docker run -d --network capes --restart unless-stopped --name capes-thehive
 Browse to `http://[CAPES-system]:9000`
 
 ## Operate
-1. Browse to TheHive's UI
+1. Browse to TheHive's and Cortex's UI
 1. Click "Update Database" and create an administrative account
+
+## Connect Cortex to TheHive
+1. Log into Cortex and create a new Organization, create a new organization administrator account in the organization you just created, create a new user called "thehive" with `read,analyze` privileges
+1. Click on the Password button next to the organization administrator and create a passphrase and press enter
+1. Click on the API button next to the "thehive" user you made and copy down the API
+1. Open `application.conf` in the root directory of `capes-docker` on your system. Update the API key in the configuration file, everything else should stay the same
+1. Run `sudo docker restart capes-thehive`
+1. Log into TheHive and in the lower right hand corner, you should see the Cortex logo with a green ring around it meaning you're connected
 
 ## Upload Configuration
 To get the custom fields with the templates, you'll need to upload the whole configuration file (which is recommended). After this configuration file is uploaded you can make any additional changes that you'd like. The below steps should be performed on your system, not CAPES:
