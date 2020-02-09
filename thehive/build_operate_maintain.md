@@ -45,7 +45,6 @@ Browse to `http://[CAPES-system]:9000`
 ## Upload Configuration
 To get the custom fields with the templates, you'll need to upload the whole configuration file (which is recommended). After this configuration file is uploaded you can make any additional changes that you'd like. The below steps should be performed on your system, not CAPES:
 
-1. Ensure you have [Python3](https://www.python.org/) installed
 1. Log into TheHive as an administrator
 1. Click on the `Admin` dropdown and select `Users`
 1. Either create a new account with `admin` permissions or use an existing account, create and reveal the API key, copy this down
@@ -53,8 +52,7 @@ To get the custom fields with the templates, you'll need to upload the whole con
 ```
 git clone https://github.com/TheHive-Project/TheHive-Resources.git
 cd TheHive-Resources/contrib/ManageConfig
-sudo pip3 install requests
-python3 submit_config.py -k <API key> -u http://CAPES-IP:9000 -c capes-config.conf
+sudo docker run -it --network capes --rm --name capes-thehive-templateimport -v $(pwd):/usr/src/myapp -w /usr/src/myapp capes/thehivetemplateimport python submit_config.py -k [API goes here] -u http://capes-thehive:9000 -c capes-config.conf
 ```
 1. You'll want to refresh your browser and all of the Case Templates and Custom Fields should be in there and ready for use.
 
