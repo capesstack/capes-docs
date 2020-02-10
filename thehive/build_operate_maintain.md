@@ -52,7 +52,7 @@ To get the custom fields with the templates, you'll need to upload the whole con
 ```
 git clone https://github.com/TheHive-Project/TheHive-Resources.git
 cd TheHive-Resources/contrib/ManageConfig
-sudo docker run -it --network capes --rm --name capes-thehive-templateimport -v $(pwd):/usr/src/myapp -w /usr/src/myapp capes/thehivetemplateimport python submit_config.py -k [API goes here] -u http://capes-thehive:9000 -c capes-config.conf
+sudo docker run -it --network capes --rm --name capes-thehive-templateimport -v $(pwd):/usr/src/myapp:z -w /usr/src/myapp capes/thehivetemplateimport python submit_config.py -k [API goes here] -u http://capes-thehive:9000 -c capes-config.conf
 ```
 1. You'll want to refresh your browser and all of the Case Templates and Custom Fields should be in there and ready for use.
 
